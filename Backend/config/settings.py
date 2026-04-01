@@ -137,7 +137,8 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    'REFRESH_TOKEN_LIFETIME' : timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),   
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -147,4 +148,8 @@ EMAIL_USE_TLS = True
 DEFAULTS_FROM_EMAIL='gillbertrajkumar@gmail.com'
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+
+
+
+
 
