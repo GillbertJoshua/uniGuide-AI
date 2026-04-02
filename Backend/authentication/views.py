@@ -96,6 +96,7 @@ class PasswordResetConfirm(GenericAPIView):
         try:
             user_id= smart_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id = user_id)
+            print("PASSWORD RESET EMAIL TRIGGERED")
             if not PasswordResetTokenGenerator().check_token(user , token):
                 return Response({
                     'message' : 'token is invalid or has expired'
@@ -110,7 +111,7 @@ class PasswordResetConfirm(GenericAPIView):
             return Response({
                 'message' : 'Token is invalid or has expired'
             },status= status.HTTP_401_UNAUTHORIZED)
-
+        
 class SetNewPassword(GenericAPIView):
     serializer_class = SetNewPasswordSerializer
     def patch(self ,request):
@@ -120,6 +121,19 @@ class SetNewPassword(GenericAPIView):
             'message' : "password reset successful",
              
         },status= status.HTTP_200_OK)
+    
+
+class LogOutUserView(GenericAPIView):
+    serializer_class = LogOutUserSerializer
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializers = self.serializer_class(data = request.data)
+        serializers.is_valid(raise_exception=True)
+        serializers.save()
+        return Response(status= status.HTTP_204_NO_CONTENT)
+    
+
+
     
 
         

@@ -1,3 +1,5 @@
+from tokenize import TokenError
+
 from rest_framework import serializers
 from .models import User
 from django.contrib.auth import authenticate 
@@ -10,6 +12,9 @@ from django.urls import reverse
 from .utils import *
 from django.utils.encoding import smart_str , force_str
 from django.utils.http import urlsafe_base64_encode , urlsafe_base64_decode
+from rest_framework_simplejwt.tokens import RefreshToken ,Token
+
+
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=68, min_length=6, write_only=True)
     password2 = serializers.CharField(max_length=68, min_length=6, write_only=True)
@@ -41,43 +46,48 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=225)
     password = serializers.CharField(max_length=225, write_only=True)
+    full_name =serializers.CharField(max_length = 255 ,read_only = True)
+    access_token =serializers.CharField(max_length = 255 ,read_only = True)
+    refresh_token =serializers.CharField(max_length = 255 ,read_only = True)
 
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ['email', 'password', 'full_name' ,'access_token' ,'refresh_token']
 
     def validate(self, attrs):
         email = attrs.get('email')
         password = attrs.get('password')
-
         request = self.context.get('request')
 
         user = authenticate(request=request, email=email, password=password)
 
         if not user:
             raise AuthenticationFailed('Invalid credentials, try again')
+        
+        tokens = user.tokens()
 
         if not user.is_verified:
             raise AuthenticationFailed('Email is not verified')
 
-        tokens = user.tokens()
+        
 
         return {
             'email': user.email,
-            'full_name': user.get_full_name(),   # ✅ FIX
+            'full_name': user.get_full_name,   
             'access_token': str(tokens.get('access')),
             'refresh_token': str(tokens.get('refresh')),  # ✅ FIX
         }
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length = 255)
 
     class Meta : 
-        fields = {'email'}
+        fields = ['email']
 
     def validate(self, attrs):
         email = attrs.get('email')
         if User.objects.filter(email=email).exists():
-            user = User.objects.get(email =email)
+            user = User.objects.get(email=email)
             uidb64 =urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
             request = self.context.get('request')
@@ -138,4 +148,23 @@ class SetNewPasswordSerializer(serializers.Serializer):
             return AuthenticationFailed('Link is  invalid or expired')
          
         return user
+    
+
+
+class LogOutUserSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()
+    default_error_messages = {
+        'bad_token' : ('Token is Invalid or has Expired')
+    }
+    def validate(self, attrs):
+        self.token =attrs.get('refresh_token')
+
+        return super().validate(attrs)
+    
+    def save(self, **kwargs):
+        try:
+            token = RefreshToken(self.token)
+            token.blacklist()
+        except TokenError:
+            return self.fail('bad_token')
     

@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from .manager import UserMangers
 from rest_framework_simplejwt.tokens import RefreshToken
 
+AUTH_PROVIDERS = {'email': 'email' , 'google' : 'google' , 'github':'github','facebook':'facebook' }
 class User(AbstractBaseUser ,PermissionsMixin):
   email = models.EmailField(max_length=225 ,unique= True , verbose_name= ("Email Address"))
   first_name = models.CharField(max_length=100 , verbose_name=("First Name"))
@@ -14,6 +15,7 @@ class User(AbstractBaseUser ,PermissionsMixin):
   is_active = models.BooleanField(default=True)
   date_joined = models.DateTimeField(auto_now_add=True)
   last_login = models.DateTimeField(auto_now= True)
+  auth_provider =models.CharField(max_length=50 ,default=AUTH_PROVIDERS.get("email"))
 
 
   USERNAME_FIELD = "email"
@@ -31,7 +33,7 @@ class User(AbstractBaseUser ,PermissionsMixin):
     return f"{self.first_name} {self.last_name}"
   
   def tokens (self):
-    refresh = RefreshToken.for_user(self )
+    refresh = RefreshToken.for_user(self)
     return {
       'refresh' : str(refresh),
       'access' : str(refresh.access_token),
