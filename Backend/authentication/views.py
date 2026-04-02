@@ -81,7 +81,6 @@ class LoginUerView(GenericAPIView):
 
 # Test view to check authentication (protected route)
 class TestAuthenticationView(GenericAPIView):
-
     permission_classes = [IsAuthenticated]   # Only accessible if authenticated
 
     def get(self , request):
