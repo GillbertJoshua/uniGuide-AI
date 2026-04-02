@@ -1,9 +1,39 @@
 import React from 'react'
 import Logo from '../assets/Image/UniGuide 1.png';
 import '../assets/Style/Login.css';
+import { useState } from 'react';
+import axios from 'axios';
 
 const login = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  const[showPassword , setShowPassword] = useState(false) ;
+  const [loginData , setLoginData] = useState({
+    email : "",
+    password : "",
+  });
+  const [error , setError] = useState("");
+  const [isLoading , setIsLoading] = useState(false)
+
+  const handleOnChange = (e) =>{
+    setLoginData({...loginData, [e.target.name]:e.target.value})
+  }
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const {email, password} =loginData
+    if(!email || !password){
+      setError("Email and password is are Required")
+    } else { 
+      setIsLoading(true)
+      const res =await axios.post("http://localhost:8000/api/v1/auth/login/")
+      const response = res.data
+      console.log(response)
+      setIsLoading(false)
+      if (res.status === 200){
+      }
+    }
+  }
+  
+
+
   return (
     <div className="login-wrapper">
       <div className="bg-glow bg-glow-teal" />
@@ -45,8 +75,8 @@ const login = () => {
                   type="email"
                   className="custom-input form-control"
                   placeholder="john@example.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  value={loginData.email}
+                  onChange={handleOnChange}
                 />
               </div>
             </div>
@@ -64,8 +94,8 @@ const login = () => {
                   type={showPassword ? 'text' : 'password'}
                   className="custom-input form-control"
                   placeholder="Enter your password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  value={loginData.password}
+                  onChange={handleOnChange}
                 />
                 <button
                   type="button"

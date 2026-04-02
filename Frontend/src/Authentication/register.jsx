@@ -1,24 +1,82 @@
-import React  ,{useState}from 'react'
+import React, { useState } from 'react'
 import '../assets/Style/Register.css';
 import Logo from '../assets/Image/UniGuide 1.png';
+import axios from "axios"
+import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import SocialLoginPopup from './SocialAuthentication';
+
 
 const Register = () => {
-  const [FormData , setFormData] =useState({
-    email : "",
-    first_name : "",
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [showSocialPopup, setShowSocialPopup] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    first_name: "",
     last_name: "",
-    password1: "",
-    password2 :"",
+    password: "",
+    password2: "",
+  });
 
-  })
+  const [error, setError] = useState("");
 
+  const handleOnChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (
+    !formData.email ||
+    !formData.first_name ||
+    !formData.last_name ||
+    !formData.password ||
+    !formData.password2
+  ) {
+    setError("All fields are required");
+    return;
+  }
+
+  try {
+    setLoading(true); // 🔥 START LOADING
+
+    console.log("SENDING 👉", formData);
+
+    const res = await axios.post(
+      "http://localhost:8000/api/v1/auth/register/",
+      formData
+    );
+
+    const response = res.data;
+
+    if (res.status === 201) {
+      toast.success(response.message);
+      navigate("/otp/verify");
+    }
+  } catch (err) {
+  console.log("ERROR 👉", err.response?.data);
+
+  if (err.response?.data) {
+    const errors = err.response.data;
+
+    const firstError = Object.values(errors)[0];
+    setError(Array.isArray(firstError) ? firstError[0] : firstError);
+  } else {
+    setError("Server error");
+  }
+} finally {
+    setLoading(false); // 🔥 STOP LOADING
+  }
+};
   return (
     <div className="signup-wrapper">
       <div className="bg-glow bg-glow-teal" />
       <div className="bg-glow bg-glow-orange" />
-
+      
       <div className="signup-box">
-
+        
         {/* Logo */}
         <div className="text-center mb-4 logo-area">
           <img src={Logo} alt="UniGuide AI" className="logo-img mb-2" />
@@ -28,7 +86,7 @@ const Register = () => {
             AI Career &amp; Internship Navigator
           </span>
         </div>
-
+        
         {/* Card */}
         <div className="signup-card p-4">
 
@@ -37,8 +95,7 @@ const Register = () => {
             <p className="card-sub-text">Start your guided career journey today</p>
           </div>
 
-          <form>
-
+          <form onSubmit={handleSubmit}>
 
             {/* Name Row */}
             <div className="row g-2 mb-3">
@@ -48,7 +105,12 @@ const Register = () => {
                   <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="#00b4d8" strokeWidth="2" strokeLinecap="round">
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
                   </svg>
-                  <input type="text" className="custom-input form-control" placeholder="John" value={FormData.first_name} />
+                  <input type="text"
+                    name="first_name"
+                    className="custom-input form-control"
+                    placeholder="John"
+                    value={formData.first_name}
+                    onChange={handleOnChange} />
                 </div>
               </div>
               <div className="col-6 field-group">
@@ -57,7 +119,12 @@ const Register = () => {
                   <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="#00b4d8" strokeWidth="2" strokeLinecap="round">
                     <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
                   </svg>
-                  <input type="text" className="custom-input form-control" placeholder="Doe" value={FormData.last_name} />
+                  <input type="text"
+                    name="last_name"
+                    className="custom-input form-control"
+                    placeholder="Doe"
+                    value={formData.last_name}
+                    onChange={handleOnChange} />
                 </div>
               </div>
             </div>
@@ -69,7 +136,12 @@ const Register = () => {
                 <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="#00b4d8" strokeWidth="2" strokeLinecap="round">
                   <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8l10 6 10-6"/>
                 </svg>
-                <input type="email" className="custom-input form-control" placeholder="john@example.com" value={FormData.email} />
+                <input type="email"
+                  name="email"
+                  className="custom-input form-control"
+                  placeholder="john@example.com"
+                  value={formData.email}
+                  onChange={handleOnChange} />
               </div>
             </div>
 
@@ -80,7 +152,12 @@ const Register = () => {
                 <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="#00b4d8" strokeWidth="2" strokeLinecap="round">
                   <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
-                <input type="password" className="custom-input form-control" placeholder="Min. 8 characters" value={FormData.password1} />
+                <input type="password"
+                  name="password"
+                  className="custom-input form-control"
+                  placeholder="Min. 6 characters"
+                  value={formData.password}
+                  onChange={handleOnChange} />
               </div>
             </div>
 
@@ -91,34 +168,64 @@ const Register = () => {
                 <svg className="input-icon" viewBox="0 0 24 24" fill="none" stroke="#f77f00" strokeWidth="2" strokeLinecap="round">
                   <path d="M9 12l2 2 4-4"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
-                <input type="password" className="custom-input form-control" placeholder="Repeat password" value={FormData.password2} />
+                <input type="password"
+                  name="password2"
+                  className="custom-input form-control"
+                  placeholder="Repeat password"
+                  value={formData.password2}
+                  onChange={handleOnChange} />
               </div>
             </div>
-
-            <button type="submit" className="btn signup-btn w-100 mb-3">
-              Create Account →
-            </button>
-
+            {/* Error Message */}
+            {error && (
+              <div className="error-msg mb-3">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="#f77f00" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                {error}
+              </div>
+            )}
+            <button 
+              type="submit" 
+              className="btn signup-btn w-100 mb-3"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner"></span> Creating...
+                </>
+              ) : (
+                "Create Account →"
+              )}
+            </button> 
           </form>
 
-          {/* Divider */}
+          {/* Social Authentication*/}
           <div className="divider my-3">
             <span /><em>or</em><span />
           </div>
 
-          {/* Google */}
-          <button className="btn google-btn w-100 mb-3">
-            <svg width="16" height="16" viewBox="0 0 24 24" className="me-2">
-              <path fill="#EA4335" d="M5.27 9.76A7.08 7.08 0 0112 5c1.69 0 3.21.6 4.4 1.57l3.29-3.29A12 12 0 000 12c0 1.94.46 3.77 1.28 5.38z"/>
-              <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.9l-3.67-3.02A7.1 7.1 0 0112 19.1c-3.4 0-6.28-2.3-7.31-5.4L.82 17.1A12 12 0 0012 24z"/>
-              <path fill="#4A90E2" d="M23.76 12.27c0-.82-.07-1.62-.2-2.4H12v4.54h6.61A5.65 5.65 0 0116.27 18l3.67 3.02C22.19 18.99 23.76 15.87 23.76 12.27z"/>
-              <path fill="#FBBC05" d="M4.69 13.7A7.14 7.14 0 014.62 12c0-.6.08-1.17.22-1.72L1.28 6.62A12 12 0 000 12c0 1.94.46 3.77 1.28 5.38z"/>
+          <button
+            type="button"
+            className="btn google-btn w-100 mb-3"
+            onClick={() => setShowSocialPopup(true)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="me-2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>
             </svg>
-            Continue with Google
+            Continue with social account
           </button>
 
+          {showSocialPopup && (
+            <SocialLoginPopup onClose={() => setShowSocialPopup(false)} />
+          )}
+
           <p className="login-link text-center mb-0">
-            Already have an account? <a href="/login">Sign in</a>
+            Already have an account? <a href="/login">Log in</a>
           </p>
 
         </div>

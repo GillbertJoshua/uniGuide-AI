@@ -1,7 +1,91 @@
-import React from 'react'
+import React, { useState, useRef } from 'react'
 import Logo from '../assets/Image/UniGuide 1.png';
 import '../assets/Style/OtpFrom.css'
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
 const OtpForm = () => {
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]); // ✅ ARRAY
+  const [loading, setLoading] = useState(false)
+  const inputs = useRef([])
+  const navigate = useNavigate()
+
+  // 🔥 Handle input change
+  const handleChange = (value, index) => {
+    if (!/^[0-9]?$/.test(value)) return
+
+    const newOtp = [...otp]
+    newOtp[index] = value
+    setOtp(newOtp)
+
+    // move to next box
+    if (value && index < 5) {
+      inputs.current[index + 1].focus()
+    }
+  }
+
+  // 🔥 Handle backspace
+  const handleKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputs.current[index - 1].focus()
+    }
+  }
+
+  // 🔥 Handle paste
+  const handlePaste = (e) => {
+    const paste = e.clipboardData.getData("text").slice(0, 6)
+    if (!/^\d+$/.test(paste)) return
+
+    const newOtp = paste.split("")
+    setOtp(newOtp)
+
+    newOtp.forEach((val, i) => {
+      if (inputs.current[i]) {
+        inputs.current[i].value = val
+      }
+    })
+  }
+
+  // 🔥 Submit
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    const otpValue = otp.join("")
+
+    if (otpValue.length !== 6) {
+      toast.error("Enter full OTP")
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      const response = await axios.post(
+        "http://localhost:8000/api/v1/auth/verify-email/",
+        { otp: otpValue } // ✅ correct
+      )
+
+      if (response.status === 200) {
+        toast.success(response.data.message)
+        navigate('/login')
+      }
+
+    } catch (err) {
+      console.log("ERROR 👉", err.response?.data)
+
+      if (err.response?.data) {
+        const errors = err.response.data
+        const firstError = Object.values(errors)[0]
+        toast.error(Array.isArray(firstError) ? firstError[0] : firstError)
+      } else {
+        toast.error("Verification failed")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="otp-wrapper">
       <div className="bg-glow bg-glow-teal" />
@@ -15,14 +99,14 @@ const OtpForm = () => {
           <h1 className="brand-name mb-1">UniGuide <span>AI</span></h1>
           <span className="brand-tag">
             <i className="dot me-1" />
-            AI Career &amp; Internship Navigator
+            AI Career & Internship Navigator
           </span>
         </div>
 
-        {/* Card */}
-        <div className="otp-card p-4">
+        {/* ✅ FORM */}
+        <form onSubmit={handleSubmit} className="otp-card p-4">
 
-          {/* Mail Icon */}
+          {/* Icon */}
           <div className="d-flex justify-content-center mb-3">
             <div className="otp-icon-wrap">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
@@ -42,7 +126,7 @@ const OtpForm = () => {
             </p>
           </div>
 
-          {/* OTP Inputs */}
+          {/* 🔥 YOUR ORIGINAL STYLE (FIXED) */}
           <div className="otp-inputs mb-4" onPaste={handlePaste}>
             {otp.map((digit, i) => (
               <input
@@ -52,16 +136,16 @@ const OtpForm = () => {
                 inputMode="numeric"
                 maxLength={1}
                 value={digit}
-                onChange={e => handleChange(i, e.target.value)}
-                onKeyDown={e => handleKeyDown(i, e)}
+                onChange={e => handleChange(e.target.value, i)}
+                onKeyDown={e => handleKeyDown(e, i)}
                 className={`otp-input ${digit ? 'filled' : ''}`}
               />
             ))}
           </div>
 
-          {/* Verify Button */}
-          <button type="submit" className="btn verify-btn w-100">
-            Verify &amp; Continue →
+          {/* Button */}
+          <button type="submit" className="btn verify-btn w-100" disabled={loading}>
+            {loading ? "Verifying..." : "Verify & Continue →"}
           </button>
 
           {/* Divider */}
@@ -72,7 +156,9 @@ const OtpForm = () => {
           {/* Resend */}
           <div className="text-center">
             <p className="resend-text mb-1">Didn't receive the code?</p>
-            <button type="button" className="btn resend-btn">Resend OTP</button>
+            <button type="button" className="btn resend-btn">
+              Resend OTP
+            </button>
           </div>
 
           {/* Back */}
@@ -80,7 +166,7 @@ const OtpForm = () => {
             <a href="/">← Back to register</a>
           </p>
 
-        </div>
+        </form>
       </div>
     </div>
   );
