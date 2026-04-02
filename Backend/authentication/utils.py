@@ -1,29 +1,37 @@
-import random
-from django.conf import settings
-from django.core.mail import EmailMessage
-from .models import *
+import random   # Used to generate random OTP numbers
+from django.conf import settings   # Access Django settings (email config etc.)
+from django.core.mail import EmailMessage   # Class to send emails
+from .models import *   # Import all models (User, OneTimePassword, etc.)
 
 
+# Function to generate a 6-digit OTP
 def generateOtp():
-  otp = ""
+  otp = ""   # Initialize empty string for OTP
 
-  for i in range(6):
-    otp +=str(random.randint(1,9)) 
+  for i in range(6):   # Loop 6 times to create 6-digit OTP
+    otp += str(random.randint(1,9))   # Add random digit (1–9) to OTP
     
-  return otp
+  return otp   # Return generated OTP
 
+
+# Function to send OTP to user's email
 def send_code_to_user(email):
-  Subject = "One Time passcode for Email verification"
-  otp_code =generateOtp()
-  print(otp_code)
-  print("Sending OTP to:", email)
-  user = User.objects.get(email =email)
-  current_site= 'myAuth.com'
+
+  Subject = "One Time passcode for Email verification"   # Email subject
+  otp_code = generateOtp()   # Generate OTP
+
+  print(otp_code)   # Print OTP in console (for debugging)
+  print("Sending OTP to:", email)   # Debug log
+
+  user = User.objects.get(email=email)   # Get user object from database
+
+  current_site = 'myAuth.com'   # Hardcoded site name (used in email body)
+
+  # Email content with OTP
   email_body =  f"""
                     Hi,
                     {user.first_name} {user.last_login}
                     Welcome to UniGuide AI!
-
 
                     To complete your registration, please use the OTP below:
 
@@ -38,22 +46,34 @@ def send_code_to_user(email):
                     Best regards,
                     UniGuide AI Team
                     """
-  from_email=settings.DEFAULTS_FROM_EMAIL
 
-  OneTimePassword.objects.create(user = user ,code = otp_code)
+  from_email = settings.DEFAULTS_FROM_EMAIL   # Sender email from settings
 
-  d_email = EmailMessage(subject= Subject , body = email_body ,from_email =  from_email , to = [email])
-  d_email.send(fail_silently=True)
-  print("Sending OTP to:", email)
+  # Save OTP in database linked to user
+  OneTimePassword.objects.create(user=user, code=otp_code)
 
-                      
-def send_normal_email(data):
-  email = EmailMessage(
-    subject= data['email_subject'],
-    body = data['email_body'],
-    from_email = settings.EMAIL_HOST_USER,
-    to = [data['to_email']]
+  # Create email object
+  d_email = EmailMessage(
+    subject=Subject,
+    body=email_body,
+    from_email=from_email,
+    to=[email]
   )
-  email.send()
+
+  d_email.send(fail_silently=True)   # Send email (ignore errors if any)
+
+  print("Sending OTP to:", email)   # Debug log again
 
 
+# Function to send a normal email (used for password reset etc.)
+def send_normal_email(data):
+
+  # Create email using data dictionary
+  email = EmailMessage(
+    subject=data['email_subject'],   # Subject from input data
+    body=data['email_body'],         # Body from input data
+    from_email=settings.EMAIL_HOST_USER,   # Sender email from settings
+    to=[data['to_email']]            # Recipient email
+  )
+
+  email.send()   # Send email
